@@ -24,11 +24,10 @@ def f(x, y, q):
 #definitions of functions that calculate partial derivatives:
 #sheet is two dimensions so we only need x and y...
 def EField(x, y, q, h):
+    #calculates partial derivatives for E in the x and y directions and returns them
     Ex = (f((x + h/2), y, q) - f((x - h/2), y, q))/h
     Ey = ((f(x, (y + h/2), q) - f(x, (y - h/2), q))/h)
-    #find the direction of the E field...
-    mag = np.abs(Ex + Ey)
-    return mag, Ex, Ey
+    return Ex, Ey
 
 ####PART A####
 #calculating the electric potential form two points on a plane
@@ -38,7 +37,6 @@ for x in range(100):
     for y in range(100):
         potential[x][y] = f(x - 55, y - 50, 1) + f(x - 45, y - 50, -1)
 
-print(potential[0][0])
 plt.hot()
 plt.imshow(potential,  label = 'V')
 plt.title('Electric Potential of Two Points')
@@ -47,7 +45,6 @@ plt.ylabel('y')
 plt.show()
 plt.savefig('exercise-521-potential.pdf',format='pdf')
 plt.clf()
-
 
 ####PART B####
 #initalizing a 2D arrays to save values from del...
@@ -64,14 +61,14 @@ if (run == 1):
     #calculating the total E field of 2 points 10cm apart...
     for x in range(100):
         for y in range(100):
-            total_field1, Ex1, Ey1 = EField(x - 55, y - 50, 1, h)
-            total_field2, Ex2, Ey2 = EField(x - 45, y - 50, -1, h)
-            field[x][y] = total_field1 + total_field2
-            x_dir[x][y] = Ex1 + Ex2
-            y_dir[x][y] = Ey1 + Ey2
+            Ex1, Ey1 = EField(x - 55, y - 50, 1, h)
+            Ex2, Ey2 = EField(x - 45, y - 50, -1, h)
+            total_field = np.sqrt((Ex1 + Ex2)**2 + (Ey1 + Ey2)**2)
+            field[x][y] = total_field
+            x_dir[x][y] = (Ex1 + Ex2)/total_field
+            y_dir[x][y] = (Ey1 + Ey2)/total_field
 
-
-    plt.quiver(x_dir, y_dir, color = 'blue')
+    plt.quiver(x_dir, y_dir, color = 'white')
     plt.imshow(field,  origin = "lower")
     plt.title('Electric Field from Two Point Charges')
     plt.xlabel('x')
@@ -81,7 +78,7 @@ if (run == 1):
 
 ####PART C####
 def distribution(x, y):
-    return 100 * cp.sin((2*np.pi*x)/0.1) * np.sin((2*np.pi*y))
+    return 100 * np.sin((2*np.pi*x)/0.1) * np.sin((2*np.pi*y))
 #lets use guassian qudrature for the double integral...
 #definition of Guassian Quadrature (Source: Newmann):
 def gaussxw(N):
@@ -111,21 +108,49 @@ def gaussxwab(N, a, b):
     x, w = gaussxw(N)
     return 0.5 * (b - a) * x + 0.5 * (b + a), 0.5 * (b - a) * w
 
-def dist_V(a, b, N):
-    #running it for 0 to 0.1(length of the distribution):
-    x, w = gaussxwab(N, a, b)
-    sum = 0
-    step = 0.01
+a = 0
+b = 0.1
+N = 20
+#running it for 0 to 0.1(length of the distribution):
+x, w = gaussxwab(N, a, b)
+sum = 0
+step = 0.01
 
-    #calculating the potential with the integral:
-    for i in range(20):
-        for j in range(20):
-            sum = sum + (w[j] * w[i]) * disribution(x[i], x[j])
+#calculating the potential with the integral:
+for i in range(N):
+    for j in range(N):
+        sum = sum + (w[j] * w[i]) * distribution(x[i], x[j])
+
+def dist_V(x, y, sum):
+    Voltage = 0
+    #Now the integral is contained in sum and we can divide by r = sqrt(x^2 + y^2)
+    Voltage = (4 * np.pi * (8.85 * 10**(-12)) * sum)/np.sqrt(x**2 + y**2)
+    return Voltage
 
 #Now to find the Electric field, varying r:
-def EField(x, y, h):
-    Ex = (distribution((x + h/2), y) - distribution((x - h/2), y))/h
-    Ey = ((distribution(x, (y + h/2)) - distribution(x, (y - h/2)))/h)
+def EField_dist(x, y, V, h):
+    Ex = (dist_V((x + h/2), y, V) - dist_V((x - h/2), y, V))/h
+    Ey = ((dist_V(x, (y + h/2), V) - dist_V(x, (y - h/2), V))/h)
     #find the direction of the E field...
-    mag = np.abs(Ex + Ey)
+    mag = np.sqrt(Ex**2 + Ey**2)
     return mag, Ex, Ey
+
+#plotting the EFeild as  a function of position on the plane
+#initializing a 2D array
+field_dist = np.zeros([100, 100], float)
+x_dir_dist = np.zeros([100, 100], float)
+y_dir_dist = np.zeros([100, 100], float)
+
+for x in range(100):
+    for y in range(100):
+        field, Ex, Ey = EField_dist((x - 50), (y - 50), sum, 0.01)
+        field_dist[x][y] = field
+        x_dir_dist[x][y] = (Ex)/field
+        y_dir_dist[x][y] = (Ey)/field
+
+plt.title('Electric Field from a Charge Distribution')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.quiver(x_dir_dist, y_dir_dist, color = 'white')
+plt.imshow(field_dist)
+plt.savefig('exercise-521-districharge.pdf',format='pdf')
