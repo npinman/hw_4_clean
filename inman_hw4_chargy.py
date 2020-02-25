@@ -52,7 +52,7 @@ field = np.zeros([100, 100], float)
 x_dir = np.zeros([100, 100], float)
 y_dir = np.zeros([100, 100], float)
 
-run = 0
+run = 1
 if (run == 1):
     #lets get ready to make a vector field:
     x_pos = []
@@ -75,6 +75,7 @@ if (run == 1):
     plt.ylabel('y')
     plt.show()
     plt.savefig('exercise-521-field.pdf',format='pdf')
+    plt.clf()
 
 ####PART C####
 def distribution(x, y):
@@ -151,6 +152,7 @@ for x in range(100):
 plt.title('Electric Field from a Charge Distribution')
 plt.xlabel('x')
 plt.ylabel('y')
-plt.quiver(x_dir_dist, y_dir_dist, color = 'white')
+plt.quiver(x_dir_dist, y_dir_dist, color = 'blue', linewidths=2)
+plt.axis([40,60,40,60])
 plt.imshow(field_dist)
 plt.savefig('exercise-521-districharge.pdf',format='pdf')
